@@ -1,3 +1,4 @@
+import os
 import logging
 
 # client/server
@@ -34,9 +35,9 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-PUBLIC_HOST = "127.0.0.1"   # AgentCard に載せる “到達可能なホスト”
-BIND_HOST = "0.0.0.0"  
-port = 9001
+PUBLIC_HOST = os.getenv("PUBLIC_HOST", "weather-agent")
+BIND_HOST = os.getenv("BIND_HOST", "0.0.0.0")
+port = int(os.getenv("PORT", "9001"))
 
 
 @tool
