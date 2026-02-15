@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 from langchain.agents import create_agent
 from .a2a_client import A2AClientToolProvider
 from langgraph.checkpoint.memory import InMemorySaver
@@ -13,19 +14,27 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Create A2A client tool provider with known agent URLs
-provider = A2AClientToolProvider(known_agent_urls=[
-    "http://127.0.0.1:9000", # Currency Expert
-    "http://127.0.0.1:9001", # Weather Expert
-])
 
-system_prompt = """
+def _load_known_agent_urls() -> list[str]:
+    raw_urls = os.getenv(
+        "KNOWN_AGENT_URLS",
+        "http://currency-agent:9000,http://weather-agent:9001",
+    )
+    return [url.strip() for url in raw_urls.split(",") if url.strip()]
+
+
+known_agent_urls = _load_known_agent_urls()
+known_agent_url_lines = "\n".join(f"- Agent URL: \"{url}\"" for url in known_agent_urls)
+
+# Create A2A client tool provider with known agent URLs
+provider = A2AClientToolProvider(known_agent_urls=known_agent_urls)
+
+system_prompt = f"""
 You are a team supervisor. Use A2A tools to delegate tasks.
 
 IMPORTANT:
 - When calling `a2a_send_message`, `target_agent_url` MUST be a full URL including scheme.
-- Currency Agent URL is: "http://127.0.0.1:9000"
-- Weather Agent URL is: "http://127.0.0.1:9001",
+{known_agent_url_lines}
 - Do NOT pass agent names like "currency agent" as `target_agent_url`.
 - If a tool call is rejected, do NOT propose the same tool call again in this conversation.
 - If all relevant tool calls are rejected, respond clearly that you cannot retrieve the information without tool execution.
